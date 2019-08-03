@@ -1,0 +1,21 @@
+#!/usr/bin/env fish
+
+set -x fbshell '/opt/fritzboxshell/fritzBoxShell.sh'
+set -x fbfriendlyname 'fritz.box'
+
+function extract_value
+    echo $$argv | awk -F' ' '{print $2}'
+end
+
+set -x wlan2_stats (eval $fbshell WLAN_2G STATISTICS | egrep 'NewTotalAssociations|NewEnable|NewChannel|NewSSID')
+set -x wlan5_stats (eval $fbshell WLAN_5G STATISTICS | egrep 'NewTotalAssociations|NewEnable|NewChannel|NewSSID')
+set -x wan_stats (eval $fbshell WAN STATE | egrep 'NewTotalBytesReceived|NewTotalBytesSent|NewTotalPacketsReceived|NewTotalPacketsSent|NewLayer1UpstreamMaxBitRate|NewLayer1DownstreamMaxBitRate|NewPhysicalLinkStatus')
+set -x igdwan_stats (eval $fbshell IGDWAN STATE | egrep 'NewByteSendRate|NewByteReceiveRate|NewX_AVM_DE_TotalBytesSent64|NewX_AVM_DE_TotalBytesReceived64')
+set -x igdip_stats (eval $fbshell IGDIP STATE | egrep 'NewConnectionStatus|NewUptime')
+
+echo "fritzbox,friendlyname=$fbfriendlyname,source=WLAN_2G devices="(extract_value wlan2_stats[1])",enabled="(extract_value wlan2_stats[2])",channel="(extract_value wlan2_stats[3])",SSID=\""(extract_value wlan2_stats[4])"\""
+echo "fritzbox,friendlyname=$fbfriendlyname,source=WLAN_5G devices="(extract_value wlan5_stats[1])",enabled="(extract_value wlan5_stats[2])",channel="(extract_value wlan5_stats[3])",SSID=\""(extract_value wlan5_stats[4])"\""
+echo "fritzbox,friendlyname=$fbfriendlyname,source=WWAN totalbytesreceived="(extract_value wan_stats[1])",totalbytessent="(extract_value wan_stats[2])",totalpacketsreceived="(extract_value wan_stats[3])",totalpacketssent="(extract_value wan_stats[4])",upstreamrate="(extract_value wan_stats[5])",downstreamrate="(extract_value wan_stats[6])",physicallinkstate=\""(extract_value wan_stats[7])"\""
+echo "fritzbox,friendlyname=$fbfriendlyname,source=IGDWAN bytesendrate="(extract_value igdwan_stats[1])",bytereceiverate="(extract_value igdwan_stats[2])",avmtotalbytessent="(extract_value igdwan_stats[3])",avmtotalbytesreceived="(extract_value igdwan_stats[4])
+echo "fritzbox,friendlyname=$fbfriendlyname,source=IGDIP connectionstatus=\""(extract_value igdip_stats[1])\"",uptime="(extract_value igdip_stats[2])
+
